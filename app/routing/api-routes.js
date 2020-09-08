@@ -23,7 +23,7 @@ app.post("/api/notes", (req, res) => {
     
     db.push(newNote)
 
-    fs.writeFileSync(DB_PATH, JSON.stringify(db))
+    fs.writeFileSync("./db/db.json", JSON.stringify(db))
 
     // End client request
     res.json(newNote)
