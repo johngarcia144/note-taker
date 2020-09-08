@@ -1,52 +1,35 @@
-const fs = require("fs")
-const DB_PATH = "../db/db.json"
-const db = require(DB_PATH) || []
-
+const fs = require('fs');
+const DB_PATH = require('../db/db.json');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = function(app) {
-
-app.get("/api/notes", (req, res) => {
-    res.json(db)
-})
-
-app.post("/api/notes", (req, res) => {
-    const { title, text } = req.body;
-
-    // Handle note validation
-    if (!title || !text) {
-        res.status(400).json({ message: "Please provide a title and a text" });
-        return;
-    }
-
-    // Save note to database
-    const newNote = { title, text }
+    app.post("/api/notes", function(req, res) {
+        req.body.id = uuidv4();
+        DB_PATH.push(req.body);
+     
+        fs.writeFile("./db/db.json", JSON.stringify(DB_PATH), function(err) {
+            if (err) {
+              return console.log(err);
+            }
+            console.log("Success!");
+          });
+        res.json(true);
+    });
+    app.get("/api/notes", function(req, res) {
+ 
+        res.json(DB_PATH);
+    });
+    app.delete("/api/notes/:id", function(req, res) {
+      // console.log(DB_PATH);
+      for (let i = 0; i < DB_PATH.length; i++) {
+        if (DB_PATH[i].id === req.params.id) {
+            DB_PATH.splice(i, 1);
+        }
+      }
+      fs.writeFile("./db/db.json", JSON.stringify(DB_PATH), function(err) {
+        if (err) throw err;
+        res.json(DB_PATH);
+      });
+    })
     
-    db.push(newNote)
-
-    fs.writeFileSync("./db/db.json", JSON.stringify(db))
-
-    // End client request
-    res.json(newNote)
-
-})
-
-app.delete("/api/notes/:id", (req, res) => {
-    const noteIndex = parseInt(req.params.id);
-
-    // Handle note ID validation
-    if (noteIndex < 0 || noteIndex >= db.length) {
-        res.status(400).json({ message: "Please provide an ID of an existing note" });
-        return;
-    }
-
-    // Delete note from database
-    db.splice(noteIndex, 1);
-
-    fs.writeFileSync(DB_PATH, JSON.stringify(db))
-
-    // End client request
-    res.json({})
-
-});
-
 }
